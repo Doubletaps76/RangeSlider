@@ -15,6 +15,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         self.rangeSlider1 = RangeSlider(imageName: "sliderThumbIcon")
+        self.rangeSlider1?.prefixString = "$"
         view.addSubview(rangeSlider1!)
         
         self.rangeSlider1?.addTarget(self, action: #selector(rangeSliderValueChanged), forControlEvents: .ValueChanged)
