@@ -48,8 +48,9 @@ class RangeSliderTrackLayer: CALayer {
         CGContextSetFillColorWithColor(ctx, UIColor.whiteColor().CGColor);
         let count = 10
         let spacing:CGFloat = width/CGFloat(count)
+        let ellipseWidth = bounds.height
         for i in 0...count {
-            CGContextFillEllipseInRect(ctx, CGRect(origin: CGPoint(x: spacing*CGFloat(i) + padding, y: 0), size: CGSize(width: bounds.height, height: bounds.height)))
+            CGContextFillEllipseInRect(ctx, CGRect(origin: CGPoint(x: spacing*CGFloat(i) + padding - ellipseWidth/2, y: 0), size: CGSize(width: ellipseWidth, height: ellipseWidth)))
         }
     }
 }
@@ -81,7 +82,7 @@ class RangeSliderThumbLayer: CALayer {
 @IBDesignable
 class RangeSlider: UIControl {
     
-    static let defaultHeight:CGFloat = 98
+    static let defaultHeight:CGFloat = 70
     
     @IBInspectable var minimumValue: Double = 0.0 {
         willSet(newValue) {
@@ -161,16 +162,12 @@ class RangeSlider: UIControl {
         return (self.thumbImage != nil) ? self.thumbImage!.size.height:30
     }
     
-    let minValueTextLayer = CATextLayer()
-    let maxValueTextLayer = CATextLayer()
     let lowerTextLayer = CATextLayer()
     let upperTextLayer = CATextLayer()
-    @IBInspectable var textColor:UIColor = UIColor.blackColor() {
+    @IBInspectable var textColor:UIColor = UIColor.whiteColor() {
         didSet{
             lowerTextLayer.foregroundColor = textColor.CGColor
             upperTextLayer.foregroundColor = textColor.CGColor
-            minValueTextLayer.foregroundColor = textColor.CGColor
-            maxValueTextLayer.foregroundColor = textColor.CGColor
         }
     }
     @IBInspectable var textFont:UIFont = UIFont.systemFontOfSize(16.0) {
@@ -179,10 +176,6 @@ class RangeSlider: UIControl {
             lowerTextLayer.fontSize = textFont.pointSize
             upperTextLayer.font = CTFontCreateWithName(textFont.fontName, 0.0, nil)
             upperTextLayer.fontSize = textFont.pointSize
-            minValueTextLayer.font = CTFontCreateWithName(textFont.fontName, 0.0, nil)
-            minValueTextLayer.fontSize = textFont.pointSize
-            maxValueTextLayer.font = CTFontCreateWithName(textFont.fontName, 0.0, nil)
-            maxValueTextLayer.fontSize = textFont.pointSize
         }
     }
     
@@ -250,8 +243,6 @@ class RangeSlider: UIControl {
         }
         
         self.backgroundColor = UIColor.clearColor()
-        self.layer.borderColor = UIColor.blackColor().CGColor
-        self.layer.borderWidth = 1.0
         
         self.trackLayer.contentsScale = UIScreen.mainScreen().scale
         layer.addSublayer(self.trackLayer)
@@ -263,20 +254,14 @@ class RangeSlider: UIControl {
         layer.addSublayer(self.lowerThumbLayer)
         layer.addSublayer(self.upperThumbLayer)
         
-        self.lowerTextLayer.alignmentMode = kCAAlignmentCenter
-        self.upperTextLayer.alignmentMode = kCAAlignmentCenter
-        self.minValueTextLayer.alignmentMode = kCAAlignmentLeft
-        self.maxValueTextLayer.alignmentMode = kCAAlignmentRight
+        self.lowerTextLayer.alignmentMode = kCAAlignmentLeft
+        self.upperTextLayer.alignmentMode = kCAAlignmentRight
         
         self.setupTextLayer(lowerTextLayer)
         self.setupTextLayer(upperTextLayer)
-        self.setupTextLayer(minValueTextLayer)
-        self.setupTextLayer(maxValueTextLayer)
         
         layer.addSublayer(self.lowerTextLayer)
         layer.addSublayer(self.upperTextLayer)
-        layer.addSublayer(self.minValueTextLayer)
-        layer.addSublayer(self.maxValueTextLayer)
         
         self.updateTextLayers()
     }
@@ -290,24 +275,18 @@ class RangeSlider: UIControl {
     }
     
     func updateTextLayers(){
-        self.lowerTextLayer.string = "\(prefixString)\(lowerValue)\(suffixString)"
-        self.upperTextLayer.string = "\(prefixString)\(upperValue)\(suffixString)"
-        self.minValueTextLayer.string = "\(prefixString)\(minimumValue)\(suffixString)"
-        self.maxValueTextLayer.string = "\(prefixString)\(maximumValue)\(suffixString)"
+        let lower:UInt = UInt(round(lowerValue))
+        let upper:UInt = UInt(round(upperValue))
+        self.lowerTextLayer.string = "\(prefixString)\(lower)\(suffixString)"
+        self.upperTextLayer.string = "\(prefixString)\(upper)\(suffixString)"
     }
     
     func updateLayerFrames() {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         
-        let textHeight:CGFloat = 21
-        let valueTextWidth = bounds.width/2
-        let bottomPadding = bounds.height - 3 - CGRectGetHeight(maxValueTextLayer.frame)
-        minValueTextLayer.frame = CGRect(x: bounds.minX + sublayerPadding + thumbWidth/2, y: bottomPadding, width: valueTextWidth, height: textHeight)
-        maxValueTextLayer.frame = CGRect(x: bounds.maxX - sublayerPadding - thumbWidth/2 - valueTextWidth, y: bottomPadding, width: valueTextWidth, height: textHeight)
-
         let tracklayerHeight:CGFloat = 5
-        let trackYPos = CGRectGetMinY(maxValueTextLayer.frame) - 10
+        let trackYPos = bounds.height - 10
         trackLayer.frame = CGRectMake(0, trackYPos, bounds.width, tracklayerHeight)
         trackLayer.setNeedsDisplay()
         
@@ -317,10 +296,12 @@ class RangeSlider: UIControl {
         let upperThumbCenter = CGFloat(positionForValue(upperValue))
         upperThumbLayer.frame = CGRect(x: upperThumbCenter - thumbWidth/2.0, y: thumbYPos, width: thumbWidth, height: thumbHeight)
         
+        let textHeight:CGFloat = 21
         let textWidth = bounds.width/2
-        lowerTextLayer.frame = CGRect(x: lowerThumbLayer.frame.midX - textWidth/2, y: lowerThumbLayer.frame.minY - textHeight, width: textWidth, height: textHeight)
-        upperTextLayer.frame = CGRect(x: upperThumbLayer.frame.midX - textWidth/2, y: upperThumbLayer.frame.minY - textHeight, width: textWidth, height: textHeight)
-
+        let padding:CGFloat = 5
+        lowerTextLayer.frame = CGRect(x: bounds.minX + sublayerPadding + thumbWidth/2, y: lowerThumbLayer.frame.minY - textHeight - padding, width: textWidth, height: textHeight)
+        upperTextLayer.frame = CGRect(x: bounds.maxX - sublayerPadding - thumbWidth/2 - textWidth, y: upperThumbLayer.frame.minY - textHeight - padding, width: textWidth, height: textHeight)
+        
         upperTextLayer.setNeedsDisplay()
         lowerTextLayer.setNeedsDisplay()
         

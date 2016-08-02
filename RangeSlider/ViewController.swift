@@ -19,6 +19,7 @@ class ViewController: UIViewController {
         view.addSubview(rangeSlider1!)
         
         self.rangeSlider1?.addTarget(self, action: #selector(rangeSliderValueChanged), forControlEvents: .ValueChanged)
+        self.rangeSlider1?.maximumValue = 1000
     }
     
     override func viewDidLayoutSubviews() {
